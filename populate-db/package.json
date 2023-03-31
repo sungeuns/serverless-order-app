@@ -1,0 +1,16 @@
+{
+  "name": "populate-db",
+  "version": "1.0.0",
+  "description": "",
+  "main": "seed-orderdb.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "aws-sdk": "^2.1345.0",
+    "node-uuid": "^1.4.8"
+  }
+}

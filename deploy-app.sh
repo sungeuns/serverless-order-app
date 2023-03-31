@@ -1,0 +1,1 @@
+sam deploy --no-confirm-changeset

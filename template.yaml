@@ -1,0 +1,229 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  order-app
+
+  SAM based order-app edu-serverless-workshop
+  
+# More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
+Globals:
+  Function:
+    Timeout: 3
+
+Resources:
+  OrderTable:
+    Type: AWS::DynamoDB::Table
+    Properties: 
+      TableName: order-table
+      AttributeDefinitions: 
+        - AttributeName: user_id
+          AttributeType: S
+        - AttributeName: id
+          AttributeType: S
+      KeySchema: 
+        - AttributeName: user_id
+          KeyType: HASH
+        - AttributeName: id
+          KeyType: RANGE
+      ProvisionedThroughput: 
+        ReadCapacityUnits: 5
+        WriteCapacityUnits: 5
+        
+  GetOrders:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: src/order-api/functions/get-orders/
+      Handler: app.getOrders
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          ORDER_TABLE: !Ref OrderTable
+      Policies:
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:Query 
+              - dynamodb:Scan
+            Resource:
+              - !Sub 
+                - 'arn:aws:dynamodb:*:*:table/${Table}'
+                - { Table: !Ref OrderTable }
+          - Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*"
+              
+  PostOrders:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: src/order-api/functions/post-orders/
+      Handler: app.postOrders
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          ORDER_TABLE: !Ref OrderTable
+      Policies:
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:PutItem
+            Resource:
+              - !Sub 
+                - 'arn:aws:dynamodb:*:*:table/${Table}'
+                - { Table: !Ref OrderTable }
+          - Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*"
+  GetSingleOrder:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: src/order-api/functions/get-single-order/
+      Handler: app.getOrderById
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          ORDER_TABLE: !Ref OrderTable
+      Policies:
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+            Resource:
+              - !Sub 
+                - 'arn:aws:dynamodb:*:*:table/${Table}'
+                - { Table: !Ref OrderTable }
+          - Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*"    
+  UpdateOrder:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: src/order-api/functions/update-order/
+      Handler: app.updateOrder
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          ORDER_TABLE: !Ref OrderTable
+      Policies:
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:UpdateItem
+            Resource:
+              - !Sub 
+                - 'arn:aws:dynamodb:*:*:table/${Table}'
+                - { Table: !Ref OrderTable }
+          - Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*"    
+
+  DeleteOrder:
+    Type: AWS::Serverless::Function 
+    Properties:
+      CodeUri: src/order-api/functions/delete-order/
+      Handler: app.deleteOrder
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          ORDER_TABLE: !Ref OrderTable
+      Policies:
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:DeleteItem
+            Resource:
+              - !Sub 
+                - 'arn:aws:dynamodb:*:*:table/${Table}'
+                - { Table: !Ref OrderTable }
+          - Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*" 
+
+  OrderApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: Dev
+      Cors:
+        AllowMethods: "'POST, GET, UPDATE, DELETE'"
+        AllowHeaders: "'X-Forwarded-For'"
+        AllowOrigin: "'*'"
+        MaxAge: "'600'"
+      DefinitionBody:
+        'Fn::Transform':
+          Name: 'AWS::Include'
+          Parameters:
+            Location: './api.yaml'
+
+  ApiGwExecutionRole: 
+    Type: "AWS::IAM::Role"
+    Properties: 
+      AssumeRolePolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          - Effect: "Allow"
+            Principal: 
+              Service: 
+                - "apigateway.amazonaws.com"
+                - "lambda.amazonaws.com"
+            Action: 
+              - "sts:AssumeRole"
+      Path: "/"
+
+  ApiGwExecutionPolicy: 
+    Type: "AWS::IAM::Policy"
+    Properties: 
+      PolicyName: "apigw-execution-policy"
+      PolicyDocument: 
+        Version: "2012-10-17"
+        Statement: 
+          Action:
+            - lambda:*
+          Effect: Allow
+          Resource:
+            - !GetAtt GetOrders.Arn
+            - !GetAtt PostOrders.Arn
+            - !GetAtt GetSingleOrder.Arn
+            - !GetAtt UpdateOrder.Arn
+            - !GetAtt DeleteOrder.Arn
+
+      Roles: 
+        - Ref: "ApiGwExecutionRole"
+
+
+
+Outputs:
+  DynamoDBTableName:
+    Description: "DynamoDB Table Name"
+    Value: !Ref OrderTable
+  GetOrders:
+    Description: "GetOrders Lambda Function ARN"
+    Value: !GetAtt GetOrders.Arn
+  PostOrders:
+    Description: "PostOrders Lambda Function ARN"
+    Value: !GetAtt PostOrders.Arn
+  GetSingleOrder:
+    Description: "GetSingleOrder Lambda Function ARN"
+    Value: !GetAtt GetSingleOrder.Arn
+  UpdateOrder:
+    Description: "UpdateOrder Lambda Function ARN"
+    Value: !GetAtt UpdateOrder.Arn
+  DeleteOrder:
+    Description: "DeleteOrder Lambda Function ARN"
+    Value: !GetAtt DeleteOrder.Arn
+  OrderApiEndpoint:
+    Description: "API Gateway endpoint URL for Dev stage for Order Get function"
+    Value: !Sub "https://${OrderApi}.execute-api.${AWS::Region}.amazonaws.com/Dev/orders/"
+
+
+
+  
