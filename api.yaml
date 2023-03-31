@@ -24,18 +24,25 @@ paths:
       - "application/json"
       produces:
       - "application/json"
-      responses: {}
+      responses:
+        "200":
+          description: "200 response"
       x-amazon-apigateway-integration:
-        type: "aws_proxy"
+        type: "aws"
         credentials: 
           Fn::GetAtt: [ ApiGwExecutionRole, Arn ]
         httpMethod: "POST"
         uri:
-          Fn::Sub: arn:aws:apigateway:${AWS::Region}:lambda:path/2015-03-31/functions/${PostOrders.Arn}/invocations
+          Fn::Sub: arn:aws:apigateway:${AWS::Region}:sqs:path/${AWS::AccountId}/${OrderQueue.QueueName}
         responses:
           default:
             statusCode: "200"
+        requestParameters:
+          integration.request.header.Content-Type: "'application/x-www-form-urlencoded'"
+        requestTemplates:
+          application/json: "Action=SendMessage&MessageBody={\"data\":$input.json('$')}"
         passthroughBehavior: "when_no_match"
+
 
   /orders/{orderId+}:
     get:
