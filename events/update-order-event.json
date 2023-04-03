@@ -2,6 +2,6 @@
     "httpMethod": "PUT",
     "pathParameters": {
         "orderId": "238ce859-5ee9-48b1-9344-d5d01448d4f1"
-     },
+    },
     "body": "{\"quantity\": 25, \"name\": \"Updated-SSSSstore\", \"restaurantId\": \"Updated rest\"}"
 }

@@ -60,7 +60,7 @@ exports.updateOrder = async (event) => {
         console.log("Success for updating Item")
         console.log(data)
     } catch (err) {
-        console.log("Failure", err.message)
+        console.error("Failure", err.message)
     }
 
     // It adds `updatedAt` parameter from current date.

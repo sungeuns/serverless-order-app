@@ -1,5 +1,5 @@
 {
-  "name": "post-orders",
+  "name": "managestate",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,7 +10,6 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@aws-sdk/client-sfn": "^3.303.0",
-    "node-uuid": "^1.4.8"
+    "@aws-sdk/client-sns": "^3.303.0"
   }
 }

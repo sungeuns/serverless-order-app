@@ -69,21 +69,22 @@ Resources:
             BatchSize: 10
       Environment:
         Variables:
-          ORDER_TABLE: !Ref OrderTable
+          STATE_MACHINE_ARN: !Ref OrderManagementSFN
       Policies:
         Statement:
           - Effect: Allow
             Action:
-              - dynamodb:PutItem
-            Resource:
-              - !Sub 
-                - 'arn:aws:dynamodb:*:*:table/${Table}'
-                - { Table: !Ref OrderTable }
-          - Effect: Allow
-            Action:
               - logs:*
             Resource:
-              - "*"
+              - "*"    
+          - Effect: Allow
+            Action:
+              - states:StartExecution
+            Resource:
+              - !Sub 
+                - '${StateMachine}'
+                - { StateMachine: !Ref OrderManagementSFN }
+
   GetSingleOrder:
     Type: AWS::Serverless::Function 
     Properties:
@@ -154,13 +155,87 @@ Resources:
               - logs:*
             Resource:
               - "*" 
+  
+  ProcessPaymentFumction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/order-management/functions/process-payment/
+      Handler: app.processPayment
+      Runtime: nodejs14.x
+
+  SendOrderToRestaurantFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/order-management/functions/sendordertorestaurant/
+      Handler: app.sendOrderToRestaurant
+      Runtime: nodejs14.x
+      
+  ManageStateFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/order-management/functions/managestate/
+      Handler: app.manageState
+      Runtime: nodejs14.x
+      Environment:
+        Variables:
+          ORDER_TABLE: !Ref OrderTable
+          SNS_TOPIC_ARN: !Ref OrderTopic
+      Policies:
+        Statement:
+          - Effect: Allow
+            Action:
+              - dynamodb:GetItem
+              - dynamodb:Query 
+              - dynamodb:Scan
+              - dynamodb:PutItem
+              - dynamodb:UpdateItem
+            Resource:
+              - !Sub 
+                - 'arn:aws:dynamodb:*:*:table/${Table}'
+                - { Table: !Ref OrderTable }
+          - Effect: Allow
+            Action:
+              - logs:*
+            Resource:
+              - "*"    
+          - Effect: Allow
+            Action:
+              - SNS:Publish
+            Resource:
+              - "*"    
+  
+  OrderTopic:
+    Type: AWS::SNS::Topic
+    Properties: 
+      Subscription: 
+        - Endpoint: "sungeuns2@gmail.com"
+        # - Endpoint: "<YOUR-EMAIL-ADDRESS(i.e.test@gmail.com)>"
+          Protocol: "email"
+      TopicName: "order-topic"
+      
+  OrderManagementSFN:
+    Type: AWS::Serverless::StateMachine
+    Properties:
+      DefinitionUri: src/order-management/statemachine/process-order.asl.json
+      DefinitionSubstitutions:
+        ManageStateArn: !GetAtt ManageStateFunction.Arn
+        ProcessPaymentArn: !GetAtt ProcessPaymentFumction.Arn
+        SendOrderToRestaurantArn: !GetAtt SendOrderToRestaurantFunction.Arn
+      Policies: 
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ManageStateFunction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref ProcessPaymentFumction
+        - LambdaInvokePolicy:
+            FunctionName: !Ref SendOrderToRestaurantFunction
 
   OrderApi:
     Type: AWS::Serverless::Api
     Properties:
       StageName: Dev
       Cors:
-        AllowMethods: "'POST, GET, UPDATE, DELETE'"
+        # AllowMethods: "'POST, GET, UPDATE, DELETE'"
+        AllowMethods: "'POST, GET, DELETE'"
         AllowHeaders: "'X-Forwarded-For'"
         AllowOrigin: "'*'"
         MaxAge: "'600'"
@@ -169,6 +244,12 @@ Resources:
           Name: 'AWS::Include'
           Parameters:
             Location: './api.yaml'
+      Auth:
+        DefaultAuthorizer: MyCognitoAuthorizer
+        Authorizers:
+          MyCognitoAuthorizer:
+            UserPoolArn: !GetAtt OrderCognitoPool.Arn
+
 
   ApiGwExecutionRole: 
     Type: "AWS::IAM::Role"
@@ -215,7 +296,32 @@ Resources:
   
   OrderDLQueue:
     Type: AWS::SQS::Queue
+    
+  OrderCognitoPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: orders-pool
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+      UsernameAttributes:
+        - email
+      Schema:
+        - AttributeDataType: String
+          Name: email
+          Required: true
 
+  OrderCognitoPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      UserPoolId: !Ref OrderCognitoPool
+      ClientName: order-pool-client
+      ExplicitAuthFlows:
+        - ALLOW_ADMIN_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      GenerateSecret: true
+      SupportedIdentityProviders:
+        - COGNITO
 
 Outputs:
   DynamoDBTableName:
@@ -245,6 +351,13 @@ Outputs:
   OrderDLQueueUrl:
     Description: "URL of order dead-letter queue"
     Value: !Ref OrderDLQueue
+  CognitoClientID:
+    Description: "The client ID of the Cognito user pool"
+    Value: !Ref OrderCognitoPoolClient
+  CognitoUserPoolID:
+    Description: "ID of the Cognito userpool"
+    Value: !Ref OrderCognitoPool
+
 
 
 

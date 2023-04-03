@@ -1,5 +1,5 @@
 {
-  "name": "post-orders",
+  "name": "sendordertorestaurant",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,9 +8,5 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
-  "dependencies": {
-    "@aws-sdk/client-sfn": "^3.303.0",
-    "node-uuid": "^1.4.8"
-  }
+  "license": "ISC"
 }
