@@ -208,8 +208,8 @@ Resources:
     Type: AWS::SNS::Topic
     Properties: 
       Subscription: 
-        - Endpoint: "sungeuns2@gmail.com"
-        # - Endpoint: "<YOUR-EMAIL-ADDRESS(i.e.test@gmail.com)>"
+        # - Endpoint: "testing@email.com"
+        - Endpoint: "<YOUR-EMAIL-ADDRESS(i.e.test@gmail.com)>"
           Protocol: "email"
       TopicName: "order-topic"
       

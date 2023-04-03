@@ -40,7 +40,9 @@ node seed-orderdb.js
 
 ## Local test
 
-SAM은 local 에서 docker를 띄워서 API Gateway나 Lambda의 동작을 테스트할 수 있습니다. `local-test` 디렉토리 하위에 있는 스크립트들은 Lambda 함수를 local 테스트하는 예시입니다.
+SAM은 local 에서 docker를 띄워서 API Gateway나 Lambda의 동작을 테스트할 수 있습니다.
+- `local-test` 디렉토리 하위에 있는 스크립트들은 Lambda 함수를 local 테스트하는 예시입니다.
+- Local에서 Lambda invoke를 할 수도 있으며 API Gateway를 Local에서 실행시킬 수 있습니다.
 - `run-local-api.sh` : API Gateway가 local 에서 동작하도록 합니다.
 
 
