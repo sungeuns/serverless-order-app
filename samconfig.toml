@@ -3,7 +3,7 @@ version = 0.1
 [default.deploy]
 [default.deploy.parameters]
 stack_name = "order-app"
-s3_bucket = "serverless-stack-workshop-202304"
+s3_bucket = "serverless-stack-workshop-20231127"
 s3_prefix = "order-app"
 region = "ap-northeast-2"
 confirm_changeset = true

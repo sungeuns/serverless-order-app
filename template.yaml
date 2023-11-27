@@ -67,9 +67,9 @@ Resources:
           Properties:
             Queue: !GetAtt OrderQueue.Arn
             BatchSize: 10
-      Environment:
-        Variables:
-          STATE_MACHINE_ARN: !Ref OrderManagementSFN
+      # Environment:
+      #   Variables:
+      #     STATE_MACHINE_ARN: !Ref OrderManagementSFN
       Policies:
         Statement:
           - Effect: Allow
@@ -77,13 +77,13 @@ Resources:
               - logs:*
             Resource:
               - "*"    
-          - Effect: Allow
-            Action:
-              - states:StartExecution
-            Resource:
-              - !Sub 
-                - '${StateMachine}'
-                - { StateMachine: !Ref OrderManagementSFN }
+          # - Effect: Allow
+          #   Action:
+          #     - states:StartExecution
+          #   Resource:
+          #     - !Sub 
+          #       - '${StateMachine}'
+          #       - { StateMachine: !Ref OrderManagementSFN }
 
   GetSingleOrder:
     Type: AWS::Serverless::Function 
@@ -170,64 +170,64 @@ Resources:
       Handler: app.sendOrderToRestaurant
       Runtime: nodejs14.x
       
-  ManageStateFunction:
-    Type: AWS::Serverless::Function
-    Properties:
-      CodeUri: src/order-management/functions/managestate/
-      Handler: app.manageState
-      Runtime: nodejs14.x
-      Environment:
-        Variables:
-          ORDER_TABLE: !Ref OrderTable
-          SNS_TOPIC_ARN: !Ref OrderTopic
-      Policies:
-        Statement:
-          - Effect: Allow
-            Action:
-              - dynamodb:GetItem
-              - dynamodb:Query 
-              - dynamodb:Scan
-              - dynamodb:PutItem
-              - dynamodb:UpdateItem
-            Resource:
-              - !Sub 
-                - 'arn:aws:dynamodb:*:*:table/${Table}'
-                - { Table: !Ref OrderTable }
-          - Effect: Allow
-            Action:
-              - logs:*
-            Resource:
-              - "*"    
-          - Effect: Allow
-            Action:
-              - SNS:Publish
-            Resource:
-              - "*"    
+  # ManageStateFunction:
+  #   Type: AWS::Serverless::Function
+  #   Properties:
+  #     CodeUri: src/order-management/functions/managestate/
+  #     Handler: app.manageState
+  #     Runtime: nodejs14.x
+  #     Environment:
+  #       Variables:
+  #         ORDER_TABLE: !Ref OrderTable
+  #         SNS_TOPIC_ARN: !Ref OrderTopic
+  #     Policies:
+  #       Statement:
+  #         - Effect: Allow
+  #           Action:
+  #             - dynamodb:GetItem
+  #             - dynamodb:Query 
+  #             - dynamodb:Scan
+  #             - dynamodb:PutItem
+  #             - dynamodb:UpdateItem
+  #           Resource:
+  #             - !Sub 
+  #               - 'arn:aws:dynamodb:*:*:table/${Table}'
+  #               - { Table: !Ref OrderTable }
+  #         - Effect: Allow
+  #           Action:
+  #             - logs:*
+  #           Resource:
+  #             - "*"    
+  #         - Effect: Allow
+  #           Action:
+  #             - SNS:Publish
+  #           Resource:
+  #             - "*"    
   
-  OrderTopic:
-    Type: AWS::SNS::Topic
-    Properties: 
-      Subscription: 
-        # - Endpoint: "testing@email.com"
-        - Endpoint: "<YOUR-EMAIL-ADDRESS(i.e.test@gmail.com)>"
-          Protocol: "email"
-      TopicName: "order-topic"
+  # OrderTopic:
+  #   Type: AWS::SNS::Topic
+  #   Properties: 
+  #     Subscription: 
+  #       # - Endpoint: "testing@email.com"
+  #       - Endpoint: "<YOUR-EMAIL-ADDRESS(i.e.test@gmail.com)>"
+  #         Protocol: "email"
+  #     TopicName: "order-topic"
       
-  OrderManagementSFN:
-    Type: AWS::Serverless::StateMachine
-    Properties:
-      DefinitionUri: src/order-management/statemachine/process-order.asl.json
-      DefinitionSubstitutions:
-        ManageStateArn: !GetAtt ManageStateFunction.Arn
-        ProcessPaymentArn: !GetAtt ProcessPaymentFumction.Arn
-        SendOrderToRestaurantArn: !GetAtt SendOrderToRestaurantFunction.Arn
-      Policies: 
-        - LambdaInvokePolicy:
-            FunctionName: !Ref ManageStateFunction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref ProcessPaymentFumction
-        - LambdaInvokePolicy:
-            FunctionName: !Ref SendOrderToRestaurantFunction
+  # OrderManagementSFN:
+  #   Type: AWS::Serverless::StateMachine
+  #   Properties:
+  #     DefinitionUri: src/order-management/statemachine/process-order.asl.json
+  #     DefinitionSubstitutions:
+  #       ManageStateArn: !GetAtt ManageStateFunction.Arn
+  #       ProcessPaymentArn: !GetAtt ProcessPaymentFumction.Arn
+  #       SendOrderToRestaurantArn: !GetAtt SendOrderToRestaurantFunction.Arn
+  #     Policies: 
+  #       - LambdaInvokePolicy:
+  #           FunctionName: !Ref ManageStateFunction
+  #       - LambdaInvokePolicy:
+  #           FunctionName: !Ref ProcessPaymentFumction
+  #       - LambdaInvokePolicy:
+  #           FunctionName: !Ref SendOrderToRestaurantFunction
 
   OrderApi:
     Type: AWS::Serverless::Api

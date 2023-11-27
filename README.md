@@ -22,6 +22,13 @@ export AWS_REGION=$(curl -s 169.254.169.254/latest/dynamic/instance-identity/doc
 echo "export AWS_REGION=${AWS_REGION}" | tee -a ~/.bash_profile
 ```
 
+#### 기존 설정 기반으로 앱 배포 시
+- s3 bucket 설정이 필요합니다.
+```
+aws s3api create-bucket --bucket serverless-stack-workshop-20231127 --create-bucket-configuration LocationConstraint=ap-northeast-2
+```
+
+
 #### 앱 배포
 - 배포를 진행하기 전에 `samconfig.toml` 에서 s3 bucket을 이름을 적절하게 맞추어 줍니다. (없다면 생성 후 설정합니다.)
 - Region 또한 맞춰줄 수 있도록 합니다.
